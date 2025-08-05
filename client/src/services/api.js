@@ -4,6 +4,7 @@ const api = {
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('token');
     const url = `${VITE_API_BASE_URL}${endpoint}`;
+    console.log(url);
     const config = {
       headers: {
         'Content-Type': 'application/json',
@@ -14,6 +15,7 @@ const api = {
     };
     const response = await fetch(url, config);
     const data = await response.json();
+    console.log('Raw response:', data);
     if (!response.ok) {
       throw new Error(data.message || 'Request failed');
     }
