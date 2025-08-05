@@ -1,6 +1,6 @@
 export default function LoginButton() {
     const handleLogin = () => {
-      window.location.href = "http://localhost:5000/auth/google"; 
+      window.location.href = "http://localhost:5000/auth/google"; // backend OAuth route
     };
   
     return (
