@@ -1,9 +1,9 @@
-const API_BASE_URL = 'http://localhost:5007';
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const api = {
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('token');
-    const url = `${API_BASE_URL}${endpoint}`;
+    const url = `${VITE_API_BASE_URL}${endpoint}`;
     const config = {
       headers: {
         'Content-Type': 'application/json',

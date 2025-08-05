@@ -1,11 +1,11 @@
 import React from 'react';
 import { BookmarkIcon } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5007';
+const VITE_API_BASE_URL = 'https://personal-notes-manager-dhxk.onrender.com';
 
 const LoginPage = () => {
   const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE_URL}/auth/google`;
+    window.location.href = `${VITE_API_BASE_URL}/auth/google`;
   };
 
   return (
