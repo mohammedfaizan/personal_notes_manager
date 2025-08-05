@@ -1,32 +1,59 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const AuthCallback = () => {
+const OAuthCallback = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+  const [error, setError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const error = urlParams.get('error');
+    const handleAuth = async () => {
+      if (isProcessing) return;
 
-    if (token) {
-      localStorage.setItem('token', token);
-      login();
-      window.location.href = '/';
-    } else if (error) {
-      console.error('OAuth error:', error);
-      window.location.href = '/login?error=' + error;
-    }
-  }, [login]);
+      const token = searchParams.get('token');
+      console.log('Token from URL:', token);
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-        <p className="text-gray-600">Completing authentication...</p>
-      </div>
-    </div>
-  );
+      if (!token) {
+        setError('No token found in URL');
+        navigate('/login', { replace: true, state: { error: 'No token provided' } });
+        return;
+      }
+
+      try {
+        setIsProcessing(true);
+        localStorage.setItem('token', token);
+
+        // Wait for login to set user and get user data
+        const userData = await login();
+
+        if (userData) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          console.error("User data missing after login");
+          setError("Login failed. Please try again.");
+          navigate('/login', { replace: true });
+        }
+      } catch (err) {
+        console.error('Auth error:', err);
+        setError(err.message);
+        localStorage.removeItem('token');
+        navigate('/login', { replace: true, state: { error: err.message } });
+      } finally {
+        setIsProcessing(false);
+      }
+    };
+
+    handleAuth();
+  }, [navigate, login, searchParams, isProcessing]);
+
+  if (error) {
+    return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
+  }
+
+  return <div className="text-center mt-10">Processing login...</div>;
 };
 
-export default AuthCallback;
+export default OAuthCallback;
