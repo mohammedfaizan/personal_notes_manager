@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookmarkIcon } from 'lucide-react';
 
-const API_BASE_URL = 'http://localhost:5007';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const LoginPage = () => {
   const handleGoogleLogin = () => {
