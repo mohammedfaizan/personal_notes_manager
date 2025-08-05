@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, SearchIcon, PinIcon, UserIcon, LogOutIcon, BookmarkIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import NoteCard from '../components/NoteCard';
 import NoteForm from '../components/NoteForm';
 import Toast from '../components/ui/Toast';
 
 const Dashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [notesLoading, setNotesLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -21,9 +23,16 @@ const Dashboard = () => {
     setToast({ message, type });
   };
 
+  // Redirect if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login');
+    }
+  }, [loading, user, navigate]);
+
   const loadNotes = async () => {
     try {
-      setLoading(true);
+      setNotesLoading(true);
       const params = {};
       if (searchTerm) params.search = searchTerm;
       if (selectedCategory) params.category = selectedCategory;
@@ -35,14 +44,14 @@ const Dashboard = () => {
       showToast('Failed to load notes', 'error');
       console.error('Load notes error:', error);
     } finally {
-      setLoading(false);
+      setNotesLoading(false);
     }
   };
 
   useEffect(() => {
-    loadNotes();
+    if (user) loadNotes();
     // eslint-disable-next-line
-  }, [searchTerm, selectedCategory]);
+  }, [searchTerm, selectedCategory, user]);
 
   const handleCreateNote = async (noteData) => {
     try {
@@ -104,6 +113,7 @@ const Dashboard = () => {
   const handleLogout = async () => {
     try {
       await logout();
+      navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
     }
@@ -120,6 +130,10 @@ const Dashboard = () => {
 
   const pinnedNotes = filteredNotes.filter(note => note.isPinned);
   const regularNotes = filteredNotes.filter(note => !note.isPinned);
+
+  if (loading) {
+    return <div className="text-center mt-10">Loading your dashboard...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,7 +200,7 @@ const Dashboard = () => {
           </div>
         </div>
         {/* Notes Grid */}
-        {loading ? (
+        {notesLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
           </div>
@@ -231,7 +245,7 @@ const Dashboard = () => {
               </div>
             )}
             {/* Empty State */}
-            {filteredNotes.length === 0 && !loading && (
+            {filteredNotes.length === 0 && !notesLoading && (
               <div className="text-center py-12">
                 <BookmarkIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-xl font-medium text-gray-500 mb-2">

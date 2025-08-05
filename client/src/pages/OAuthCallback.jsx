@@ -1,48 +1,35 @@
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
-const OAuthCallback = () => {
+export default function OAuthCallback() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { login } = useAuth();
-  const [error, setError] = useState(null);
-  const hasRun = useRef(false); // <-- prevents running twice
+  const { setUser } = useAuth();
 
   useEffect(() => {
-    if (hasRun.current) return;  // <-- already handled
-    hasRun.current = true;
+    const token = new URLSearchParams(window.location.search).get("token");
 
-    const handleAuth = async () => {
-      const token = searchParams.get('token') || localStorage.getItem('token'); 
-      console.log('Token from URL or storage:', token);
+    if (token) {
+      localStorage.setItem("token", token);
 
-      if (!token) {
-        setError('No token found in URL');
-        navigate('/login', { replace: true, state: { error: 'No token provided' } });
-        return;
-      }
+      // Fetch user profile after storing token
+      fetch(`${import.meta.env.REACT_APP_API_URL}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setUser(data.data.user);
+            navigate("/dashboard", { replace: true }); // Redirect after login
+          } else {
+            navigate("/login");
+          }
+        })
+        .catch(() => navigate("/login"));
+    } else {
+      navigate("/login");
+    }
+  }, [navigate, setUser]);
 
-      try {
-        localStorage.setItem('token', token);
-        await login();
-        navigate('/dashboard', { replace: true });
-      } catch (err) {
-        console.error('Auth error:', err);
-        setError(err.message);
-        localStorage.removeItem('token');
-        navigate('/login', { replace: true, state: { error: err.message } });
-      }
-    };
-
-    handleAuth();
-  }, [navigate, login, searchParams]);
-
-  if (error) {
-    return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
-  }
-
-  return <div className="text-center mt-10">Processing login...</div>;
-};
-
-export default OAuthCallback;
+  return <div className="text-center mt-10">Completing login...</div>;
+}
