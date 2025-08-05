@@ -1,7 +1,8 @@
 export default function LoginButton() {
     const handleLogin = () => {
-      // Use the full URL with the correct protocol (https)
-      window.location.href = `${window.location.origin}/api/auth/google`;
+      // Use the full backend URL for OAuth
+      const backendUrl = 'https://personal-notes-manager-dhxk.onrender.com';
+      window.location.href = `${backendUrl}/auth/google`;
     };
   
     return (

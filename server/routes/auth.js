@@ -10,9 +10,13 @@ const router = express.Router();
 // Initiate Google OAuth
 router.get(
   "/google",
+  (req, res, next) => {
+    console.log('Initiating Google OAuth');
+    next();
+  },
   passport.authenticate("google", {
     scope: ["profile", "email"],
-    prompt: "select_account", // Forces account selection
+    prompt: "select_account",
   })
 );
 
@@ -20,11 +24,13 @@ router.get(
 router.get(
   "/google/callback",
   passport.authenticate("google", {
-    failureRedirect: `${process.env.CLIENT_URL}/login?error=oauth_failed`,
+    failureRedirect: "/login?error=oauth_failed",
     session: false,
   }),
   async (req, res) => {
     try {
+      console.log('OAuth callback received for user:', req.user?.email);
+      
       // Generate JWT token
       const token = jwt.sign(
         {
@@ -34,17 +40,19 @@ router.get(
         process.env.JWT_SECRET || "fallback-jwt-secret",
         {
           expiresIn: "7d",
-          issuer: "notes-app",
-          audience: "notes-app-users",
         }
       );
 
-      // Redirect to client with token
-      const redirectUrl = `${process.env.CLIENT_URL}/auth/callback?token=${token}`;
-      res.redirect(redirectUrl);
+      // Get the frontend URL from environment variable or use a default
+      const frontendUrl = process.env.FRONTEND_URL || 'https://personal-notes-manager-rho.vercel.app';
+      console.log('Redirecting to frontend with token');
+      
+      // Redirect to the frontend with the token
+      return res.redirect(`${frontendUrl}/auth/callback?token=${token}`);
     } catch (error) {
       console.error("OAuth callback error:", error);
-      res.redirect(`${process.env.CLIENT_URL}/login?error=auth_failed`);
+      const frontendUrl = process.env.FRONTEND_URL || 'https://personal-notes-manager-rho.vercel.app';
+      return res.redirect(`${frontendUrl}/login?error=auth_failed`);
     }
   }
 );
