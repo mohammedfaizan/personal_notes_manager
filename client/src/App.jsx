@@ -1,18 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/OAuthCallback';
 import Dashboard from './pages/Dashboard';
 
 const AppRouter = () => {
   const { user, loading } = useAuth();
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
-
-  useEffect(() => {
-    const handlePopState = () => setCurrentPath(window.location.pathname);
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
 
   if (loading) {
     return (
@@ -25,10 +19,20 @@ const AppRouter = () => {
     );
   }
 
-  if (currentPath === '/login') return <LoginPage />;
-  if (currentPath === '/auth/callback') return <AuthCallback />;
-  if (currentPath === '/' && user) return <Dashboard />;
-  return <LoginPage />;
+  return (
+    <Routes>
+      <Route
+        path="/login"
+        element={user ? <Navigate to="/" replace /> : <LoginPage />}
+      />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route
+        path="/"
+        element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+      />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 };
 
 const App = () => (
