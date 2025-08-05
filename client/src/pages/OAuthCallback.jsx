@@ -7,14 +7,11 @@ const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const [error, setError] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const handleAuth = async () => {
-      if (isProcessing) return;
-
-      const token = searchParams.get('token');
-      console.log('Token from URL:', token);
+      const token = searchParams.get('token') || localStorage.getItem('token'); 
+      console.log('Token from URL or storage:', token);
 
       if (!token) {
         setError('No token found in URL');
@@ -23,31 +20,19 @@ const OAuthCallback = () => {
       }
 
       try {
-        setIsProcessing(true);
         localStorage.setItem('token', token);
-
-        // Wait for login to set user and get user data
-        const userData = await login();
-
-        if (userData) {
-          navigate('/dashboard', { replace: true });
-        } else {
-          console.error("User data missing after login");
-          setError("Login failed. Please try again.");
-          navigate('/login', { replace: true });
-        }
+        await login();
+        navigate('/dashboard', { replace: true }); // Immediately leave callback page
       } catch (err) {
         console.error('Auth error:', err);
         setError(err.message);
         localStorage.removeItem('token');
         navigate('/login', { replace: true, state: { error: err.message } });
-      } finally {
-        setIsProcessing(false);
       }
     };
 
     handleAuth();
-  }, [navigate, login, searchParams, isProcessing]);
+  }, [navigate, login, searchParams]);
 
   if (error) {
     return <div className="text-center mt-10 text-red-500">Error: {error}</div>;
